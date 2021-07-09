@@ -2,15 +2,19 @@ import operator
 from Colors import Colors
 from Moves import Move, Position, Capture, Castling, En_passant
 import copy
-
+import itertools
 
 class Piece:
     def __init__(self, color, is_pinned=False):
         self.is_pinned = is_pinned
         self.color = color
+        self.has_moved = False
 
     def get_moves(self, position, board):
         return []
+
+    def __str__(self):
+        return ''
 
 
 def get_king_pos(pretend_board, color):
@@ -20,7 +24,7 @@ def get_king_pos(pretend_board, color):
                 return row, col
 
 
-def is_in_check(pretend_board, color):
+def is_in_check(pretend_board, color, pos):
     """
 
     :param pretend_board: a board with a move made to check whether king is attacked
@@ -28,38 +32,38 @@ def is_in_check(pretend_board, color):
     :return: whether king of color is in check or not after candidate move on the pretend_board
     """
 
-    row, col = get_king_pos(pretend_board, color)
-    i = 1
-    j = 1
+    # move itself is not valid if piece moves to the same place as king
+    if pos is None:
+        return False
+
+    row, col = pos.row, pos.col
+
     # checking in 8 directions for opposing piece
     for i in range(row + 1, len(pretend_board)):
         if 0 <= i <= 7 and pretend_board[i][col].color not in [color, Colors.blank] and type(pretend_board[i][col]) in [Rook, Queen]:
             return True
         if pretend_board[i][col].color == color:
             break
-    i = 1
-    j = 1
+
     for i in range(row - 1, 0, -1):
-        if 0 <= i <= 7 and pretend_board[i][col].color not in [color, Colors.blank]:
+        if 0 <= i <= 7 and pretend_board[i][col].color not in [color, Colors.blank] and type(pretend_board[i][col]) in [Rook, Queen]:
             return True
         if 0 <= i <= 7 and pretend_board[i][col].color == color:
             break
-    i = 1
-    j = 1
+
     for i in range(col + 1, len(pretend_board)):
-        if 0 <= i <= 7 and pretend_board[row][i].color not in [color, Colors.blank]:
+        if 0 <= i <= 7 and pretend_board[row][i].color not in [color, Colors.blank] and type(pretend_board[i][col]) in [Rook, Queen]:
             return True
         if 0 <= i <= 7 and pretend_board[row][i].color == color:
             break
-    i = 1
-    j = 1
+
     for i in range(col - 1, 0, -1):
-        if 0 <= i <= 7 and pretend_board[row][i].color not in [color, Colors.blank]:
+        if 0 <= i <= 7 and pretend_board[row][i].color not in [color, Colors.blank] and type(pretend_board[i][col]) in [Rook, Queen]:
             return True
         if 0 <= i <= 7 and pretend_board[row][i].color == color:
             break
     i = 1
-    j = 1
+
     while 0 <= row - i <= 7 and 0 <= col - i <= 7:
         if pretend_board[row - i][col - i].color not in [color, Colors.blank] and type(
                 pretend_board[row - i][col - i]) in [Bishop, Queen]:
@@ -68,7 +72,6 @@ def is_in_check(pretend_board, color):
             break
         i -= 1
     i = 1
-    j = 1
     while 0 <= row + i <= 7 and 0 <= col + i <= 7:
         if pretend_board[row + i][col + i].color not in [color, Colors.blank] and type(
                 pretend_board[row + i][col + i]) in [Bishop, Queen]:
@@ -119,13 +122,15 @@ def filter_valid_moves(board, candidate_moves):
     :return: valid moves within bounds of the board and not pinned (king is not in check after the move)
     """
     valid_moves = []
+
     for move in candidate_moves:
         if 0 <= move.new_pos.row <= len(board)-1 and 0 <= move.new_pos.col <= len(board[0])-1:
+            pos = get_king_pos(board, move)
             pretend_board = copy.deepcopy(board)
             old_piece = pretend_board[move.prev.row][move.prev.col]
             pretend_board[move.prev.row][move.prev.col] = Piece(color=Colors.blank)
             pretend_board[move.new_pos.row][move.new_pos.col] = old_piece
-            if not is_in_check(pretend_board, old_piece.color):
+            if not is_in_check(pretend_board, old_piece.color, pos):
                 valid_moves.append(move)
     return valid_moves
 
@@ -188,10 +193,50 @@ def filter_bishop_moves(board, candidate_moves):
     return valid_moves
 
 
+def filter_knight_moves(board, candidate_moves):
+    valid_moves = []
+    for move in candidate_moves:
+        new_row, new_col = move.new_pos.row, move.new_pos.col
+        old_row, old_col = move.prev.row, move.prev.col
+        if board[new_row][new_col].color == Colors.blank:
+            valid_moves.append(move)
+        if board[new_row][new_col].color not in [Colors.blank, board[old_row][old_col].color]:
+            valid_moves.append(Capture(move.prev, move.new_pos))
+
+    return valid_moves
+
+
+def filter_castling_moves(board, castling_moves):
+    valid_moves = []
+    move1, move2 = castling_moves[0], castling_moves[1]
+    color = board[move1.prev.row][move1.prev.col].color
+
+    row, col = get_king_pos(board, color)
+    if board[row][col].has_moved:
+        return False
+
+    # for short castling
+
+    if type(board[row][col - 3]) is Rook and not board[row][col - 3].has_moved:
+        for i in range(1, 4):
+            if is_in_check(board, color, Position((row, col - i))):
+              break
+        valid_moves.append(move1)
+
+    # for long castling
+
+    if type(board[row][col + 3]) is Rook and not board[row][col + 3].has_moved:
+        for i in range(1, 5):
+            if is_in_check(board, color, Position((row, col + i))):
+                break
+        valid_moves.append(move2)
+
+    return valid_moves
+
+
 class Pawn(Piece):
     def __init__(self, color, is_pinned=False):
         super(Pawn, self).__init__(color, is_pinned)
-        self.moved_once = False
 
     def get_moves(self, position, game):
         row = position.row
@@ -205,7 +250,7 @@ class Pawn(Piece):
             op = operator.sub
 
         # move only valid if pawn hasnt moved yet
-        if not self.moved_once:
+        if not self.has_moved:
             num_steps = 2
         else:
             num_steps = 1
@@ -221,11 +266,13 @@ class Pawn(Piece):
 
         return normal_moves + capture_moves + en_passant_moves
 
+    def __str__(self):
+        return ''
+
 
 class Rook(Piece):
     def __init__(self, color, is_pinned=False):
         super(Rook, self).__init__(color, is_pinned)
-        self.has_moved = False
 
     def get_moves(self, position, game):
         row = position.row
@@ -243,11 +290,29 @@ class Rook(Piece):
 
         return right_up_moves+right_down_moves+left_up_moves+left_down_moves
 
+    def __str__(self):
+        return 'R'
+
 
 class King(Piece):
     def __init__(self, color, is_pinned=False):
         super(King, self).__init__(color, is_pinned)
-        self.has_moved = False
+
+    def get_moves(self, position, game):
+        row = position.row
+        col = position.col
+
+        normal_moves = [Move(position, Position((row+i, col+j))) for i, j in itertools.product([0, 1, -1],repeat=2)]
+        normal_moves = filter_valid_moves(game.board, normal_moves)
+        normal_moves = filter_knight_moves(game.board, normal_moves)
+
+        castling_moves = [Castling(position, Position((row, col+2))), Castling(position, Position((row, col - 2)))]
+        castling_moves = filter_castling_moves(game.board, castling_moves)
+
+        return [move for move in normal_moves if (move.prev.row!= move.new_pos.row and move.prev.col != move.new_pos.col)] + castling_moves
+
+    def __str__(self):
+        return 'K'
 
 
 class Bishop(Piece):
@@ -270,6 +335,9 @@ class Bishop(Piece):
 
         return right_up_moves+right_down_moves+left_up_moves+left_down_moves
 
+    def __str__(self):
+        return 'B'
+
 
 class Queen(Piece):
     def __init__(self, color, is_pinned=False):
@@ -280,6 +348,9 @@ class Queen(Piece):
         bishop = Bishop(color)
         rook = Rook(color)
         return bishop.get_moves(position, game) + rook.get_moves(position, game)
+
+    def __str__(self):
+        return 'Q'
 
 
 class Knight(Piece):
@@ -298,3 +369,7 @@ class Knight(Piece):
         knight_moves = filter_valid_moves(game.board, moves_1+moves_2)
         knight_moves = filter_bishop_moves(game.board, knight_moves)
         return knight_moves
+
+    def __str__(self):
+        return 'N'
+
