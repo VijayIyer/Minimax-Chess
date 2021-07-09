@@ -8,71 +8,52 @@ import operator
 import random as rnd
 import numpy as np
 import copy
+import time
+import Colors
+from Colors import Colors
+import Piece
+from Piece import Piece, Pawn, Queen, Knight, King, Bishop, Rook
+import Moves
 
 
-class Types(Enum):
-    pawn = 1
-    knight = 2
-    bishop = 3
-    rook = 4
-    queen = 5
-    king = 6
-    no_piece = 7
+# class Piece:
+#     def __init__(self, color, type, position: Position):
+#         self.color = color
+#         self.type = type
+#         self.position = position
+#
+#     def __str__(self):
+#         # print_out = [[' ' for _ in range(5)] for _ in range(5)]
+#         if self.type == Types.pawn:
+#             # return '  |  '
+#             return ' p' + self.color + ' '
+#         if self.type == Types.knight:
+#             # return ' /|| '
+#             return ' N' + self.color + ' '
+#         if self.type == Types.rook:
+#             return ' R' + self.color + ' '
+#             # return ' ||| '
+#         if self.type == Types.bishop:
+#             return ' B' + self.color + ' '
+#             # return ' / \\ '
+#         if self.type == Types.queen:
+#             return ' Q' + self.color + ' '
+#             # return ' /*\\ '
+#         if self.type == Types.king:
+#             return ' K' + self.color + ' '
+#             # return ' |*| '
+#         if self.type == Types.no_piece:
+#             return '    '
+#             # return '     '
 
 
-class Move:
-    def __init__(self, before):
-        self.before = before
-        self.captured_piece = None
+# class King(Piece):
+#     def __init__(self, color, type, position: Position):
+#         super().__init__(color, type, position)
+#         self.has_moved_once = False
 
 
-class Position:
-
-    def __init__(self, row, col):
-        self.row = row
-        self.col = col
-
-        # self.occupied_by = occupied_by
-
-
-class Piece:
-    def __init__(self, color, type, position: Position):
-        self.color = color
-        self.type = type
-        self.position = position
-
-    def __str__(self):
-        # print_out = [[' ' for _ in range(5)] for _ in range(5)]
-        if self.type == Types.pawn:
-            # return '  |  '
-            return ' p'+ self.color+' '
-        if self.type == Types.knight:
-            # return ' /|| '
-            return ' N'+ self.color+' '
-        if self.type == Types.rook:
-            return ' R'+self.color+' '
-            # return ' ||| '
-        if self.type == Types.bishop:
-            return ' B'+self.color+' '
-            # return ' / \\ '
-        if self.type == Types.queen:
-            return ' Q'+self.color+' '
-            # return ' /*\\ '
-        if self.type == Types.king:
-            return ' K'+self.color+' '
-            # return ' |*| '
-        if self.type == Types.no_piece:
-            return '    '
-            # return '     '
-
-
-class King(Piece):
-    def __init__(self, color, type, position: Position):
-        super().__init__(color, type, position)
-        self.has_moved_once = False
-
-
-def get_move(move: Move, type, is_a_capture:bool):
+def get_move(move: Move, type, is_a_capture: bool):
     new_position = move.after
     old = move.before
     old_pos_char = ''
@@ -99,93 +80,59 @@ def get_move(move: Move, type, is_a_capture:bool):
 
 class Game:
     def __init__(self, starting_pos):
+
         self.starting_pos = starting_pos
-        self.pieces = []  # all 32 pieces and their positions
-        self.board = [[Piece('_', Types.no_piece, Position(i, j)) for i in range(8)] for j in
-                      range(8)]  # a 2d grid of characters representing current pieces
-        self.initalize_board_and_pieces()
+        self.board = self.initalize_board_and_pieces()
         self.moves = []
         self.move_names = []
 
     def initalize_board_and_pieces(self):
+        board = [[Piece(color=Colors.blank) for _ in range(8)] for _ in range(8)]
+        board[1][0] = Pawn(color=Colors.white)
+        board[1][1] = Pawn(color=Colors.white)
+        board[1][2] = Pawn(color=Colors.white)
+        board[1][3] = Pawn(color=Colors.white)
+        board[1][4] = Pawn(color=Colors.white)
+        board[1][5] = Pawn(color=Colors.white)
+        board[1][6] = Pawn(color=Colors.white)
+        board[1][7] = Pawn(color=Colors.white)
+        board[0][0] = Rook(color=Colors.white)
+        board[0][7] = Rook(color=Colors.white)
 
-        # self.board[1][0] = Piece('w', Types.pawn, Position(1, 0))
-        # self.board[1][1] = Piece('w', Types.pawn, Position(1, 1))
-        # self.board[1][2] = Piece('w', Types.pawn, Position(1, 2))
-        # self.board[1][3] = Piece('w', Types.pawn, Position(1, 3))
-        # self.board[1][4] = Piece('w', Types.pawn, Position(1, 4))
-        # self.board[1][5] = Piece('w', Types.pawn, Position(1, 5))
-        # self.board[1][6] = Piece('w', Types.pawn, Position(1, 6))
-        # self.board[1][7] = Piece('w', Types.pawn, Position(1, 7))
+        board[0][1] = Knight(color=Colors.white)
+        board[0][6] = Knight(color=Colors.white)
+        board[0][5] = Bishop(color=Colors.white)
+        board[0][2] = Bishop(color=Colors.white)
+        board[0][3] = King(color=Colors.white)
 
-        self.board[1][0] = Piece('w', Types.no_piece, Position(1, 0))
-        self.board[1][1] = Piece('w', Types.no_piece, Position(1, 1))
-        self.board[1][2] = Piece('w', Types.no_piece, Position(1, 2))
-        self.board[1][3] = Piece('w', Types.no_piece, Position(1, 3))
-        self.board[1][4] = Piece('w', Types.no_piece, Position(1, 4))
-        self.board[1][5] = Piece('w', Types.no_piece, Position(1, 5))
-        self.board[1][6] = Piece('w', Types.no_piece, Position(1, 6))
-        self.board[1][7] = Piece('w', Types.no_piece, Position(1, 7))
+        board[0][4] = Queen(color=Colors.white)
 
-        self.board[0][0] = Piece('w', Types.rook, Position(0, 0))
-        self.board[0][7] = Piece('w', Types.rook, Position(0, 7))
+        board[6][0] = Pawn(color=Colors.black)
+        board[6][1] = Pawn(color=Colors.black)
+        board[6][2] = Pawn(color=Colors.black)
+        board[6][3] = Pawn(color=Colors.black)
+        board[6][4] = Pawn(color=Colors.black)
+        board[6][5] = Pawn(color=Colors.black)
+        board[6][6] = Pawn(color=Colors.black)
+        board[6][7] = Pawn(color=Colors.black)
+        board[7][0] = Rook(color=Colors.black)
+        board[7][7] = Rook(color=Colors.black)
 
-        # self.board[0][1] = Piece('w', Types.knight, Position(0, 1))
-        # self.board[0][6] = Piece('w', Types.knight, Position(0, 6))
-        # self.board[0][5] = Piece('w', Types.bishop, Position(0, 5))
-        # self.board[0][2] = Piece('w', Types.bishop, Position(0, 2))
-
-        self.board[0][1] = Piece('w', Types.no_piece, Position(0, 1))
-        self.board[0][6] = Piece('w', Types.no_piece, Position(0, 6))
-        self.board[0][5] = Piece('w', Types.no_piece, Position(0, 5))
-        self.board[0][2] = Piece('w', Types.no_piece, Position(0, 2))
-
-        self.board[0][3] = King('w', Types.king, Position(0, 3))
-        # self.board[0][4] = Piece('w', Types.queen, Position(0, 4))
-
-        self.board[0][4] = Piece('w', Types.no_piece, Position(0, 4))
-
-
-        # self.board[6][0] = Piece('b', Types.pawn, Position(6, 0))
-        # self.board[6][1] = Piece('b', Types.pawn, Position(6, 1))
-        # self.board[6][2] = Piece('b', Types.pawn, Position(6, 2))
-        # self.board[6][3] = Piece('b', Types.pawn, Position(6, 3))
-        # self.board[6][4] = Piece('b', Types.pawn, Position(6, 4))
-        # self.board[6][5] = Piece('b', Types.pawn, Position(6, 5))
-        # self.board[6][6] = Piece('b', Types.pawn, Position(6, 6))
-        # self.board[6][7] = Piece('b', Types.pawn, Position(6, 7))
-
-        self.board[6][0] = Piece('b', Types.no_piece, Position(6, 0))
-        self.board[6][1] = Piece('b', Types.no_piece, Position(6, 1))
-        self.board[6][2] = Piece('b', Types.no_piece, Position(6, 2))
-        self.board[6][3] = Piece('b', Types.no_piece, Position(6, 3))
-        self.board[6][4] = Piece('b', Types.no_piece, Position(6, 4))
-        self.board[6][5] = Piece('b', Types.no_piece, Position(6, 5))
-        self.board[6][6] = Piece('b', Types.no_piece, Position(6, 6))
-        self.board[6][7] = Piece('b', Types.no_piece, Position(6, 7))
-
-        self.board[7][0] = Piece('b', Types.rook, Position(7, 0))
-        self.board[7][7] = Piece('b', Types.rook, Position(7, 7))
-        # self.board[7][1] = Piece('b', Types.knight, Position(7, 1))
-        # self.board[7][6] = Piece('b', Types.knight, Position(7, 6))
-        # self.board[7][5] = Piece('b', Types.bishop, Position(7, 5))
-        # self.board[7][2] = Piece('b', Types.bishop, Position(7, 2))
-
-        self.board[7][1] = Piece('b', Types.no_piece, Position(7, 1))
-        self.board[7][6] = Piece('b', Types.no_piece, Position(7, 6))
-        self.board[7][5] = Piece('b', Types.no_piece, Position(7, 5))
-        self.board[7][2] = Piece('b',Types.no_piece, Position(7, 2))
-
-        self.board[7][3] = King('b', Types.king, Position(7, 3))
-        # self.board[7][4] = Piece('b', Types.queen, Position(7, 4))
-        self.board[7][4] = Piece('b', Types.no_piece, Position(7, 4))
+        board[7][1] = Knight(color=Colors.black)
+        board[7][6] = Knight(color=Colors.black)
+        board[7][5] = Bishop(color=Colors.black)
+        board[7][2] = Bishop(color=Colors.black)
+        board[7][3] = King(color=Colors.black)
+        board[7][4] = Queen(color=Colors.black)
+        return board
 
     def generate_moves(self, color):
         valid_moves = []
         for row in range(len(self.board)):
             for col in range(len(self.board[0])):
-                if self.board[row][col].type != Types.no_piece and self.board[row][col].color == color:
-                    valid_moves.extend(self.get_valid_moves(self.board[row][col]))
+                if self.board[row][col].color == color:
+                    piece = self.board[row][col]
+                    valid_moves.extend(piece.get_moves(Position(row, col), self))
         return valid_moves
 
     def get_valid_moves(self, square):
@@ -223,9 +170,6 @@ class Game:
         if self.board[new_position.row][new_position.col].type != Types.no_piece:
             is_a_capture = True
 
-
-
-
         captured_position = move.captured_piece
         old = copy.copy(self.board[old_position.row][old_position.col])
         new = copy.copy(self.board[new_position.row][new_position.col])
@@ -238,7 +182,6 @@ class Game:
         self.board[old_position.row][old_position.col].color = '_'
         self.board[old_position.row][old_position.col].position = old_position
 
-
         if captured_position is not None:
             # update captured position with blank (comes into play for en passant)
             self.board[captured_position.row][captured_position.col].type = Types.no_piece
@@ -246,14 +189,13 @@ class Game:
             self.board[captured_position.row][captured_position.col].position = captured_position
             is_a_capture = True
 
-
         self.board[new_position.row][new_position.col].position = new_position
         self.move_names.append(get_move(move, self.board[new_position.row][new_position.col].type, is_a_capture))
         self.moves.append(move)
 
-
         # short castling
-        if self.board[new_position.row][new_position.col].type == Types.king and new_position.col == old_position.col-2:
+        if self.board[new_position.row][
+            new_position.col].type == Types.king and new_position.col == old_position.col - 2:
             self.board[new_position.row][2].type = Types.rook
             self.board[new_position.row][2].color = self.board[new_position.row][new_position.col].color
             self.board[new_position.row][0].type = Types.no_piece
@@ -263,7 +205,8 @@ class Game:
 
         # long castling
 
-        elif self.board[new_position.row][new_position.col].type == Types.king and new_position.col == old_position.col + 2:
+        elif self.board[new_position.row][
+            new_position.col].type == Types.king and new_position.col == old_position.col + 2:
             self.board[new_position.row][4].type = Types.rook
             self.board[new_position.row][4].color = self.board[new_position.row][new_position.col].color
             self.board[new_position.row][7].type = Types.no_piece
@@ -293,14 +236,14 @@ class Game:
 
         # two steps forward move for white
         if not blocked and square.color == 'w' and square.position.row == 1:
-            if self.board[current_square.row+2][current_square.col].type == Types.no_piece:
+            if self.board[current_square.row + 2][current_square.col].type == Types.no_piece:
                 move2 = Move(current_square)
                 position2 = Position(current_square.row + 2, current_square.col)
                 move2.after = position2
                 valid_moves.append(move2)
 
         if not blocked and square.color == 'b' and square.position.row == 6:
-            if self.board[current_square.row-2][current_square.col].type == Types.no_piece:
+            if self.board[current_square.row - 2][current_square.col].type == Types.no_piece:
                 move2 = Move(current_square)
                 position2 = Position(current_square.row - 2, current_square.col)
                 move2.after = position2
@@ -321,7 +264,6 @@ class Game:
             move2.after = position2
             valid_moves.append(move2)
 
-
         # en passant for white on upper left diagonal
         move3 = Move(current_square)
         prev_mov = None
@@ -329,17 +271,25 @@ class Game:
             prev_mov = self.moves[-1]
         if prev_mov is not None:
             if square.color == 'w':
-                if current_square.col-1 >= 0 and self.board[current_square.row][current_square.col-1].type == Types.pawn and self.board[current_square.row][current_square.col-1].color != square.color and prev_mov.before.row == current_square.row + 2 and prev_mov.after.row == current_square.row:
-                    move3.after = Position(current_square.row+1, current_square.col-1)
+                if current_square.col - 1 >= 0 and self.board[current_square.row][
+                    current_square.col - 1].type == Types.pawn and self.board[current_square.row][
+                    current_square.col - 1].color != square.color and prev_mov.before.row == current_square.row + 2 and prev_mov.after.row == current_square.row:
+                    move3.after = Position(current_square.row + 1, current_square.col - 1)
                     valid_moves.append(move3)
-                elif current_square.col+1 <= 7 and self.board[current_square.row][current_square.col+1].type == Types.pawn and self.board[square.position.row][square.position.col+1].color != square.color and prev_mov.before.row == square.position.row + 2 and prev_mov.after.row == square.position.row:
+                elif current_square.col + 1 <= 7 and self.board[current_square.row][
+                    current_square.col + 1].type == Types.pawn and self.board[square.position.row][
+                    square.position.col + 1].color != square.color and prev_mov.before.row == square.position.row + 2 and prev_mov.after.row == square.position.row:
                     move3.after = Position(square.position.row + 1, square.position.col + 1)
                     valid_moves.append(move3)
             elif square.color == 'b':
-                if current_square.col-1 >= 0 and self.board[square.position.row][square.position.col-1].type == Types.pawn and self.board[square.position.row][square.position.col-1].color != square.color and prev_mov.before.row == square.position.row - 2 and prev_mov.after.row == square.position.row:
-                    move3.after = Position(square.position.row-1, square.position.col-1)
+                if current_square.col - 1 >= 0 and self.board[square.position.row][
+                    square.position.col - 1].type == Types.pawn and self.board[square.position.row][
+                    square.position.col - 1].color != square.color and prev_mov.before.row == square.position.row - 2 and prev_mov.after.row == square.position.row:
+                    move3.after = Position(square.position.row - 1, square.position.col - 1)
                     valid_moves.append(move3)
-                elif current_square.col+1 <= 7 and self.board[square.position.row][square.position.col+1].type == Types.pawn and self.board[square.position.row][square.position.col+1].color != square.color and prev_mov.before.row == square.position.row - 2 and prev_mov.after.row == square.position.row:
+                elif current_square.col + 1 <= 7 and self.board[square.position.row][
+                    square.position.col + 1].type == Types.pawn and self.board[square.position.row][
+                    square.position.col + 1].color != square.color and prev_mov.before.row == square.position.row - 2 and prev_mov.after.row == square.position.row:
                     move3.after = Position(square.position.row - 1, square.position.col + 1)
                     valid_moves.append(move3)
 
@@ -540,28 +490,27 @@ class Game:
         if square.has_moved_once == False:
             i = 1
             while self.board[row][col - i].type != Types.rook:
-                if self.board[row][col-i].type != Types.no_piece:
+                if self.board[row][col - i].type != Types.no_piece:
                     castling = False
                     break
-                i+=1
+                i += 1
             if castling:
                 move = Move(square.position)
-                move.after = Position(row, col-2)
+                move.after = Position(row, col - 2)
                 valid_moves.append(move)
 
         # checking if long castling is possible
         if square.has_moved_once == False:
             i = 1
             while self.board[row][col + i].type != Types.rook:
-                if self.board[row][col+ i].type != Types.no_piece:
+                if self.board[row][col + i].type != Types.no_piece:
                     long_castling = False
                     break
-                i+=1
+                i += 1
             if long_castling:
                 move = Move(square.position)
-                move.after = Position(row, col+2)
+                move.after = Position(row, col + 2)
                 valid_moves.append(move)
-
 
         # upper left diagonal
         if row + 1 <= 7 and col + 1 <= 7 and self.board[row + 1][col + 1].color != square.color:
@@ -675,9 +624,20 @@ def print_king():
     print(' ___ ')
 
 
+def print_dots(number_of_dots):
+    print('\r'+'*'* number_of_dots, end='')
+    time.sleep(1)
+
+
 if __name__ == '__main__':
 
-    turn = 'w'
+    # num = 1
+    # while 1:
+    #     print_dots(number_of_dots=num)
+    #     num += 1
+    #     if num > 10:
+    #         num = 1
+    turn = Colors.white
     starting_pos = [('e4', 'e5')]
     game = Game(starting_pos)
     while 1:
