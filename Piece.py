@@ -103,12 +103,12 @@ def is_in_check(pretend_board, color, pos):
     # check by pawn
     if color == Colors.white:
         for i in [-1, 1]:
-            if pretend_board[row + 1][col + i].color not in [color, Colors.blank] and type(
+            if 0 <= row+1 <= 7 and 0 <= col+i <= 7 and pretend_board[row + 1][col + i].color not in [color, Colors.blank] and type(
                     pretend_board[row + 1][col + i]) == Pawn:
                 return True
     if color == Colors.black:
         for i in [-1, 1]:
-            if pretend_board[row - 1][col + i].color not in [color, Colors.blank] and type(
+            if 0 <= row-1 <= 7 and 0 <= col+i <= 7 and pretend_board[row - 1][col + i].color not in [color, Colors.blank] and type(
                     pretend_board[row - 1][col + i]) == Pawn:
                 return True
 
@@ -213,23 +213,26 @@ def filter_castling_moves(board, castling_moves):
 
     row, col = get_king_pos(board, color)
     if board[row][col].has_moved:
-        return False
+        return []
 
     # for short castling
 
     if type(board[row][col - 3]) is Rook and not board[row][col - 3].has_moved:
-        for i in range(1, 4):
-            if is_in_check(board, color, Position((row, col - i))):
+        for i in range(1, 3):
+
+            if board[row][col - i].color != Colors.blank or is_in_check(board, color, Position((row, col - i))):
               break
-        valid_moves.append(move1)
+        else:
+            valid_moves.append(move2)
 
     # for long castling
 
-    if type(board[row][col + 3]) is Rook and not board[row][col + 3].has_moved:
-        for i in range(1, 5):
-            if is_in_check(board, color, Position((row, col + i))):
+    if type(board[row][col + 4]) is Rook and not board[row][col + 4].has_moved:
+        for i in range(1, 3):
+            if board[row][col + i].color != Colors.blank or is_in_check(board, color, Position((row, col + i))):
                 break
-        valid_moves.append(move2)
+        else:
+            valid_moves.append(move1)
 
     return valid_moves
 
@@ -309,7 +312,7 @@ class King(Piece):
         castling_moves = [Castling(position, Position((row, col+2))), Castling(position, Position((row, col - 2)))]
         castling_moves = filter_castling_moves(game.board, castling_moves)
 
-        return [move for move in normal_moves if (move.prev.row!= move.new_pos.row and move.prev.col != move.new_pos.col)] + castling_moves
+        return normal_moves + castling_moves
 
     def __str__(self):
         return 'K'
@@ -362,10 +365,10 @@ class Knight(Piece):
         col = position.col
         a = [-2, 2]
         b = [-1, 1]
-        moves_1 = [Move(position, Position((row+i, col+j))) for i, j in zip(a, b)]
+        moves_1 = [Move(position, Position((row+i, col+j))) for i, j in itertools.product(a, b)]
         a = [-1, 1]
         b = [-2, 2]
-        moves_2 = [Move(position, Position((row+i, col+j))) for i, j in zip(a, b)]
+        moves_2 = [Move(position, Position((row+i, col+j))) for i, j in itertools.product(a, b)]
         knight_moves = filter_valid_moves(game.board, moves_1+moves_2)
         knight_moves = filter_bishop_moves(game.board, knight_moves)
         return knight_moves

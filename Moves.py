@@ -40,23 +40,10 @@ class Castling(Move):
         super(Castling, self).__init__(prev, new_pos)
 
     def __str__(self):
-        return 'O-O'
-
-
-class ShortCastling(Castling):
-    def __init__(self, prev, new_pos):
-        super(Castling, self).__init__()
-
-    def __str__(self):
-        return 'O-O'
-
-
-class LongCastling(Castling):
-    def __init__(self, prev, new_pos):
-        super(Castling, self).__init__()
-
-    def __str__(self):
-        return 'O-O-O'
+        if self.prev.col == self.new_pos.col +2:
+            return 'O-O'
+        else:
+            return 'O-O-O'
 
 
 class Capture(Move):

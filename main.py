@@ -14,6 +14,19 @@ from Colors import Colors
 import Piece
 from Piece import Piece, Pawn, Queen, Knight, King, Bishop, Rook
 from Moves import Position, Move, En_passant, Capture, Castling
+import re
+
+
+def find_piece_rows(piece_type, board, color):
+    candidate_rows = []
+    candidate_cols = []
+    for i in range(len(board)):
+        for j in range(len(board[0])):
+            if type(board[i][j]) == piece_type and board[i][j].color == color:
+                candidate_rows.append(i)
+                candidate_cols.append(j)
+
+    return candidate_rows, candidate_cols
 
 
 class Game:
@@ -23,6 +36,23 @@ class Game:
         self.board = self.initalize_board_and_pieces()
         self.moves = []
         self.move_names = []
+        self.turn = Colors.white
+        self.move_count = 1
+        self.game_moves_total = ''
+        if len(starting_pos) > 0:
+            for move_name in starting_pos:
+
+                move = self.infer_move(move_name, self.turn)
+                self.update_board(move)
+                if self.turn == Colors.white:
+                    self.turn = Colors.black
+                    self.game_moves_total += ' ' + str(self.move_count) + '.'
+                    self.game_moves_total += self.move_names[-1]
+                elif self.turn == Colors.black:
+                    self.turn = Colors.white
+
+                    self.game_moves_total += ' ' + self.move_names[-1]
+                    self.move_count += 1
 
     def initalize_board_and_pieces(self):
         board = [[Piece(color=Colors.blank) for _ in range(8)] for _ in range(8)]
@@ -76,10 +106,43 @@ class Game:
     def update_board(self, chosen_move):
         self.board = self.act_on_move(chosen_move)
         self.moves.append(chosen_move)
-        self.move_names.append(str(self.board[chosen_move.new_pos.row][chosen_move.new_pos.col])+str(chosen_move))
+        self.move_names.append(str(self.board[chosen_move.new_pos.row][chosen_move.new_pos.col]) + str(chosen_move))
 
-    def act_on_move(self, move:Move):
-        if type(move) != En_passant:
+    def act_on_move(self, move: Move):
+        if type(move) == Castling:
+
+            # updating king position
+            new_board = copy.deepcopy(self.board)
+            new_row, new_col = move.new_pos.row, move.new_pos.col
+            old_row, old_col = move.prev.row, move.prev.col
+            new_board[new_row][new_col] = copy.deepcopy(self.board[old_row][old_col])
+            new_board[old_row][old_col] = Piece(color=Colors.blank)
+            new_board[new_row][new_col].has_moved = True
+
+            # updating rook position
+            if new_col == old_col - 2:
+                new_board[new_row][new_col + 1] = copy.deepcopy(new_board[new_row][0])
+                new_board[new_row][new_col + 1].has_moved = True
+                new_board[new_row][0] = Piece(color=Colors.blank)
+            else:
+                new_board[new_row][new_col - 1] = copy.deepcopy(new_board[new_row][7])
+                new_board[new_row][new_col - 1].has_moved = True
+                new_board[new_row][7] = Piece(color=Colors.blank)
+
+            return new_board
+
+        elif type(move) == En_passant:
+            op = operator.sub if self.board[move.prev.row][move.prev.col].color == Colors.white else operator.add
+            new_board = copy.deepcopy(self.board)
+            new_row, new_col = move.new_pos.row, move.new_pos.col
+            old_row, old_col = move.prev.row, move.prev.col
+            new_board[new_row][new_col] = copy.deepcopy(self.board[old_row][old_col])
+            new_board[old_row][old_col] = Piece(color=Colors.blank)
+            new_board[new_row][new_col].has_moved = True
+            # updating captured piece
+            new_board[op(new_row, 1)][new_col] = Piece(color=Colors.blank)
+
+        else:
             new_board = copy.deepcopy(self.board)
             new_row, new_col = move.new_pos.row, move.new_pos.col
             old_row, old_col = move.prev.row, move.prev.col
@@ -88,17 +151,69 @@ class Game:
             new_board[new_row][new_col].has_moved = True
             return new_board
 
-        else:
-            op = operator.sub if self.board[move.prev.row][move.prev.col].color == Colors.white else operator.add
-            new_board = copy.deepcopy(self.board)
-            new_row, new_col = move.new_pos.row, move.new_pos.col
-            old_row, old_col = move.prev.row, move.prev.col
-            new_board[new_row][new_col] = copy.deepcopy(self.board[old_row][old_col])
-            new_board[old_row][old_col] = Piece(color=Colors.blank)
-            new_board[new_row][new_col].has_moved = True
+    def infer_move(self, move, color):
+        '''
+        work on this regex
+        (?'piece'[K|N|B|R|Q]?)(?'amb'[a-h1-8]?)(?'capture'[x]?)(?'newcol'[a-h]{1})(?'newrow'[1-8]{1})(?'checkormate'[+|#]*)$
 
-            # updating captured piece
-            new_board[op(new_row, 1)][new_col] = Piece(color=Colors.blank)
+        :param move:
+        :param color:
+        :return:
+        '''
+        pattern = re.compile('(?P<piece>[K|N|B|R|Q]?)(?P<amb>[a-h1-8]?)(?P<capture>[x]?)(?P<newcol>[a-h]{1})('
+                             '?P<newrow>[1-8]{1})(?P<checkormate>[+|#]*)$|(?P<LongCastle>^(O-O-O){1})$|(?P<Castle>^('
+                             'O-O){1})$')
+        m = re.match(pattern=pattern, string=move)
+        m_dict = m.groupdict()
+        piece_type = Pawn
+        if m_dict['LongCastle'] is not None:
+            if color == Colors.white:
+                return Castling(Position((0, 3)), Position((0, 5)))
+            elif color == Colors.black:
+                return Castling(Position((7, 3)), Position((7, 5)))
+        if m_dict['Castle'] is not None:
+            if color == Colors.white:
+                return Castling(Position((0, 3)), Position((0, 1)))
+            elif color == Colors.black:
+                return Castling(Position((7, 3)), Position((7, 1)))
+
+        if m_dict['piece'] == '':
+            piece_type = Pawn
+        elif m_dict['piece'] == 'N':
+            piece_type = Knight
+        elif m_dict['piece'] == 'B':
+            piece_type = Bishop
+        elif m_dict['piece'] == 'R':
+            piece_type = Rook
+        elif m_dict['piece'] == 'Q':
+            piece_type = Queen
+        elif m_dict['piece'] == 'K':
+            piece_type = King
+
+        old_row, old_col = 0, 0
+        if m_dict['amb'] != '':
+            old_col = 104 - ord(m_dict['amb'])
+
+        if m_dict['capture'] != '':
+            move_type = Capture
+        else:
+            move_type = Move
+
+        new_row, new_col = int(m_dict['newrow']) - 1, 104 - ord(m_dict['newcol'])
+
+        candidate_rows, candidate_cols = find_piece_rows(piece_type, self.board, color)
+        candidate_moves = []
+        for row, col in zip(candidate_rows, candidate_cols):
+            candidate_moves.extend(self.board[row][col].get_moves(Position((row, col)), self))
+
+        if len(candidate_moves) == 0:
+            return []
+        for move in candidate_moves:
+            if type(move) == En_passant:
+                move_type = En_passant
+            if move.new_pos.row == new_row and move.new_pos.col == new_col:
+                return move_type(move.prev, move.new_pos)
+        return []
 
 
 def print_chess_board(board):
@@ -109,32 +224,8 @@ def print_chess_board(board):
             print(board[i][j].color, end='\t')
 
 
-def print_rook():
-    print(' ||| ')
-    print(' ||| ')
-    print(' ||| ')
-    print(' ||| ')
-    print(' ___ ')
-
-
-def print_queen():
-    print(' ||| ')
-    print(' /|\\ ')
-    print(' \\|/ ')
-    print(' ||| ')
-    print(' ___ ')
-
-
-def print_king():
-    print(' /-\\ ')
-    print(' ||| ')
-    print(' --- ')
-    print(' ||| ')
-    print(' ___ ')
-
-
 def print_dots(number_of_dots):
-    print('\r'+'*'* number_of_dots, end='')
+    print('\r' + '*' * number_of_dots, end='')
     time.sleep(1)
 
 
@@ -146,21 +237,30 @@ if __name__ == '__main__':
     #     num += 1
     #     if num > 10:
     #         num = 1
-    turn = Colors.white
-    starting_pos = [('e4', 'e5')]
+
+    starting_pos = ['e4', 'e5', 'f4', 'd6', 'f5', 'g5', 'fxg6']
     game = Game(starting_pos)
+
     while 1:
-        moves = game.generate_moves(turn)
+
+        moves = game.generate_moves(game.turn)
         if len(moves) == 0:
             print('\n---game over---')
             break
         chosen_move = rnd.choice(moves)
         game.update_board(chosen_move)
-        print(f'\nmove - {game.move_names[-1]}\n')
-        if turn == Colors.white:
-            turn = Colors.black
+
+        if game.turn == Colors.white:
+            game.turn = Colors.black
+            game.game_moves_total += ' ' + str(game.move_count) + '.'
+            game.game_moves_total += game.move_names[-1]
+            print(game.game_moves_total)
         else:
-            turn = Colors.white
+            game.turn = Colors.white
+            game.game_moves_total += ' ' + game.move_names[-1]
+            print(game.game_moves_total)
+            game.move_count += 1
+
         print_chess_board(game.board)
         print('\n')
         print('-' * 100)
