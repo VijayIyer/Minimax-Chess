@@ -12,6 +12,7 @@ import time
 import Colors
 from Colors import Colors
 import Piece
+import itertools
 from Piece import Piece, Pawn, Queen, Knight, King, Bishop, Rook
 from Moves import Position, Move, En_passant, Capture, Castling
 import re
@@ -106,6 +107,9 @@ class Game:
     def update_board(self, chosen_move):
         self.board = self.act_on_move(chosen_move)
         self.moves.append(chosen_move)
+        self.is_in_check = ''
+        if Piece.is_in_check(self.board, game.turn, Piece.get_king_pos(self.board, game.turn)):
+            self.is_in_check = '+'
         self.move_names.append(str(self.board[chosen_move.new_pos.row][chosen_move.new_pos.col]) + str(chosen_move))
 
     def act_on_move(self, move: Move):
@@ -141,7 +145,7 @@ class Game:
             new_board[new_row][new_col].has_moved = True
             # updating captured piece
             new_board[op(new_row, 1)][new_col] = Piece(color=Colors.blank)
-
+            return new_board
         else:
             new_board = copy.deepcopy(self.board)
             new_row, new_col = move.new_pos.row, move.new_pos.col
@@ -209,7 +213,7 @@ class Game:
         if len(candidate_moves) == 0:
             return []
         for move in candidate_moves:
-            if type(move) == En_passant:
+            if type(move) == En_passant and move_type == Capture:
                 move_type = En_passant
             if move.new_pos.row == new_row and move.new_pos.col == new_col:
                 return move_type(move.prev, move.new_pos)
@@ -230,7 +234,6 @@ def print_dots(number_of_dots):
 
 
 if __name__ == '__main__':
-
     # num = 1
     # while 1:
     #     print_dots(number_of_dots=num)
@@ -238,13 +241,14 @@ if __name__ == '__main__':
     #     if num > 10:
     #         num = 1
 
-    starting_pos = ['e4', 'e5', 'f4', 'd6', 'f5', 'g5', 'fxg6']
+    starting_pos = ['e4', 'e5', 'Bc4', 'Nc6', 'Qf3', 'Bc5', 'Qxf7#']
     game = Game(starting_pos)
 
     while 1:
 
         moves = game.generate_moves(game.turn)
         if len(moves) == 0:
+            game.is_in_check = '#'
             print('\n---game over---')
             break
         chosen_move = rnd.choice(moves)
@@ -253,11 +257,11 @@ if __name__ == '__main__':
         if game.turn == Colors.white:
             game.turn = Colors.black
             game.game_moves_total += ' ' + str(game.move_count) + '.'
-            game.game_moves_total += game.move_names[-1]
+            game.game_moves_total += game.move_names[-1]+game.is_in_check
             print(game.game_moves_total)
         else:
             game.turn = Colors.white
-            game.game_moves_total += ' ' + game.move_names[-1]
+            game.game_moves_total += ' ' + game.move_names[-1]+game.is_in_check
             print(game.game_moves_total)
             game.move_count += 1
 
@@ -265,6 +269,6 @@ if __name__ == '__main__':
         print('\n')
         print('-' * 100)
 
-    print(moves)
+    print(game.game_moves_total)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
