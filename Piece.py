@@ -112,6 +112,15 @@ def is_in_check(pretend_board, color, pos):
                     pretend_board[row - 1][col + i]) == Pawn:
                 return True
 
+    for i, j in itertools.product([-2,2],[-1,1]):
+        if 0 <= row+i <= 7 and 0 <= col+j <= 7 and pretend_board[row+i][col+j].color not in [Colors.blank, color] and type(pretend_board[row+i][col+j]) == Knight:
+            return True
+
+    for i, j in itertools.product([-1, 1], [-2, 2]):
+        if 0 <= row+i <= 7 and 0 <= col+j <= 7 and pretend_board[row + i][col + j].color not in [Colors.blank, color] and type(
+                pretend_board[row + i][col + j]) == Knight:
+            return True
+
     return False
 
 
@@ -170,18 +179,33 @@ def filter_en_passant(game, candidate_moves):
         prev_row, prev_col = move.prev.row, move.prev.col
         color = board[prev_row][prev_col].color
         if type(move) == En_passant:
+            if prev_move.new_pos.row == move.new_pos.row:
+                if color == Colors.black:
+                    if move.prev.col == prev_move.new_pos.col + 1 and move.new_pos.col == prev_move.new_pos.col:
+                        if prev_move.prev.row == prev_move.new_pos.row - 2 and prev_move.new_pos.col == prev_move.prev.col:
+                            valid_moves.append(move)
+                    if move.prev.col == prev_move.new_pos.col - 1 and move.new_pos.col == prev_move.new_pos.col:
+                        if prev_move.prev.row == prev_move.new_pos.row - 2 and prev_move.new_pos.col == prev_move.prev.col:
+                            valid_moves.append(move)
 
-            if color == Colors.white and prev_move.new_pos.row == prev_move.prev.row - 2 and (prev_move.new_pos.col == prev_col+1 or prev_move.new_pos.col == prev_col-1) and move.new_pos.col == prev_move.new_pos.col:
-                if type(board[prev_move.new_pos.row][prev_move.new_pos.col-1]) == Pawn and board[prev_row][prev_col-1].color not in [Colors.blank, color]:
-                    valid_moves.append(move)
-                elif type(board[prev_move.new_pos.row][prev_move.new_pos.col+1]) == Pawn and board[prev_row][prev_col+1].color not in [Colors.blank, color]:
-                    valid_moves.append(move)
-
-            if color == Colors.black and prev_move.new_pos.row == prev_move.prev.row + 2 and (prev_move.prev.col == prev_col+1 or prev_move.prev.col == prev_col-1) and move.new_pos.col == prev_move.new_pos.col:
-                if type(board[prev_move.new_pos.row][prev_move.new_pos.col-1]) == Pawn and board[prev_row][prev_col-1].color not in [Colors.blank, color]:
-                    valid_moves.append(move)
-                elif type(board[prev_move.new_pos.row][prev_move.new_pos.col+1]) == Pawn and board[prev_row][prev_col+1].color not in [Colors.blank, color]:
-                    valid_moves.append(move)
+                if color == Colors.white:
+                    if move.prev.col == prev_move.new_pos.col + 1 and move.new_pos.col == prev_move.new_pos.col:
+                        if prev_move.prev.row == prev_move.new_pos.row + 2 and prev_move.new_pos.col == prev_move.prev.col:
+                            valid_moves.append(move)
+                    if move.prev.col == prev_move.new_pos.col - 1 and move.new_pos.col == prev_move.new_pos.col:
+                        if prev_move.prev.row == prev_move.new_pos.row + 2 and prev_move.new_pos.col == prev_move.prev.col:
+                            valid_moves.append(move)
+            # if color == Colors.white and prev_move.new_pos.row == prev_move.prev.row - 2 and (prev_move.new_pos.col == prev_col+1 or prev_move.new_pos.col == prev_col-1) and move.new_pos.col == prev_move.new_pos.col:
+            #     if type(board[move.prev.row][move.prev.col-1]) == Pawn and board[move.prev.row][move.prev.col+1].color not in [Colors.blank, color]:
+            #         valid_moves.append(move)
+            #     elif type(board[move.prev.row][move.prev.col+1]) == Pawn and board[move.prev.row][move.prev.col+1].color not in [Colors.blank, color]:
+            #         valid_moves.append(move)
+            #
+            # if color == Colors.black and prev_move.new_pos.row == prev_move.prev.row + 2 and (prev_move.prev.col == prev_col+1 or prev_move.prev.col == prev_col-1) and move.new_pos.col == prev_move.new_pos.col:
+            #     if type(board[move.prev.row][move.prev.col-1]) == Pawn and board[move.prev.row][move.prev.col-1].color not in [Colors.blank, color]:
+            #         valid_moves.append(move)
+            #     elif type(board[move.prev.row][move.prev.col+1]) == Pawn and board[move.prev.row][move.prev.col+1].color not in [Colors.blank, color]:
+            #         valid_moves.append(move)
 
     return valid_moves
 
@@ -307,10 +331,10 @@ class Rook(Piece):
         row = position.row
         col = position.col
 
-        right_up_moves = filter_valid_moves(game.board, [Move(position, Position((row+i, col))) for i in range(1, len(game.board) - 1)])
-        right_down_moves = filter_valid_moves(game.board, [Move(position, Position((row - i, col))) for i in range(1, len(game.board) - 1)])
-        left_up_moves = filter_valid_moves(game.board, [Move(position, Position((row, col-i))) for i in range(1, len(game.board) - 1)])
-        left_down_moves = filter_valid_moves(game.board, [Move(position, Position((row, col+i))) for i in range(1, len(game.board) - 1)])
+        right_up_moves = filter_valid_moves(game.board, [Move(position, Position((row+i, col))) for i in range(1, len(game.board))])
+        right_down_moves = filter_valid_moves(game.board, [Move(position, Position((row - i, col))) for i in range(1, len(game.board))])
+        left_up_moves = filter_valid_moves(game.board, [Move(position, Position((row, col-i))) for i in range(1, len(game.board))])
+        left_down_moves = filter_valid_moves(game.board, [Move(position, Position((row, col+i))) for i in range(1, len(game.board))])
 
         right_up_moves = filter_bishop_moves(game.board, right_up_moves)
         right_down_moves = filter_bishop_moves(game.board, right_down_moves)

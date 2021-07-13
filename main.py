@@ -13,9 +13,10 @@ import Colors
 from Colors import Colors
 import Piece
 import itertools
-from Piece import Piece, Pawn, Queen, Knight, King, Bishop, Rook
+from Piece import Piece, Pawn, Queen, Knight, King, Bishop, Rook, is_in_check, get_king_pos
 from Moves import Position, Move, En_passant, Capture, Castling
 import re
+from collections import defaultdict
 
 
 def find_piece_rows(piece_type, board, color):
@@ -40,6 +41,8 @@ class Game:
         self.turn = Colors.white
         self.move_count = 1
         self.game_moves_total = ''
+        self.is_in_check = ''
+        self.same_move = defaultdict(list)
         if len(starting_pos) > 0:
             for move_name in starting_pos:
 
@@ -97,20 +100,26 @@ class Game:
 
     def generate_moves(self, color):
         valid_moves = []
+        self.same_move = defaultdict(list)
         for row in range(len(self.board)):
             for col in range(len(self.board[0])):
                 if self.board[row][col].color == color:
                     piece = self.board[row][col]
                     valid_moves.extend(piece.get_moves(Position((row, col)), self))
+        for move in valid_moves:
+            self.same_move[(move.new_pos.row, move.new_pos.col)].append(move)
         return valid_moves
 
     def update_board(self, chosen_move):
         self.board = self.act_on_move(chosen_move)
         self.moves.append(chosen_move)
         self.is_in_check = ''
-        if Piece.is_in_check(self.board, game.turn, Piece.get_king_pos(self.board, game.turn)):
+        if is_in_check(self.board, Colors.white if self.turn==Colors.black else Colors.black, get_king_pos(self.board, Colors.white if self.turn==Colors.black else Colors.black)):
             self.is_in_check = '+'
-        self.move_names.append(str(self.board[chosen_move.new_pos.row][chosen_move.new_pos.col]) + str(chosen_move))
+        if type(chosen_move) == Castling:
+            self.move_names.append(str(chosen_move))
+        else:
+            self.move_names.append(str(self.board[chosen_move.new_pos.row][chosen_move.new_pos.col]) + str(chosen_move))
 
     def act_on_move(self, move: Move):
         if type(move) == Castling:
@@ -181,6 +190,7 @@ class Game:
             elif color == Colors.black:
                 return Castling(Position((7, 3)), Position((7, 1)))
 
+        #region determining piece type
         if m_dict['piece'] == '':
             piece_type = Pawn
         elif m_dict['piece'] == 'N':
@@ -193,7 +203,7 @@ class Game:
             piece_type = Queen
         elif m_dict['piece'] == 'K':
             piece_type = King
-
+        #endregion
         old_row, old_col = 0, 0
         if m_dict['amb'] != '':
             old_col = 104 - ord(m_dict['amb'])
@@ -212,11 +222,13 @@ class Game:
 
         if len(candidate_moves) == 0:
             return []
+        tmp_move_type = move_type
         for move in candidate_moves:
             if type(move) == En_passant and move_type == Capture:
-                move_type = En_passant
+                tmp_move_type = En_passant
             if move.new_pos.row == new_row and move.new_pos.col == new_col:
-                return move_type(move.prev, move.new_pos)
+                return tmp_move_type(move.prev, move.new_pos)
+            tmp_move_type = move_type
         return []
 
 
@@ -241,7 +253,7 @@ if __name__ == '__main__':
     #     if num > 10:
     #         num = 1
 
-    starting_pos = ['e4', 'e5', 'Bc4', 'Nc6', 'Qf3', 'Bc5', 'Qxf7#']
+    starting_pos = ['e4','e5']
     game = Game(starting_pos)
 
     while 1:
@@ -249,26 +261,29 @@ if __name__ == '__main__':
         moves = game.generate_moves(game.turn)
         if len(moves) == 0:
             game.is_in_check = '#'
+            game.game_moves_total += game.is_in_check
             print('\n---game over---')
             break
+        else:
+            game.game_moves_total += game.is_in_check
         chosen_move = rnd.choice(moves)
         game.update_board(chosen_move)
 
         if game.turn == Colors.white:
             game.turn = Colors.black
             game.game_moves_total += ' ' + str(game.move_count) + '.'
-            game.game_moves_total += game.move_names[-1]+game.is_in_check
+            game.game_moves_total += game.move_names[-1]
             print(game.game_moves_total)
         else:
             game.turn = Colors.white
-            game.game_moves_total += ' ' + game.move_names[-1]+game.is_in_check
+            game.game_moves_total += ' ' + game.move_names[-1]
             print(game.game_moves_total)
             game.move_count += 1
 
-        print_chess_board(game.board)
+        # print_chess_board(game.board)
         print('\n')
         print('-' * 100)
 
     print(game.game_moves_total)
-
+    print_chess_board(game.board)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
