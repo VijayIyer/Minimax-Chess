@@ -1,6 +1,6 @@
 import operator
 from Colors import Colors
-from Moves import Move, Position, Capture, Castling, En_passant
+from Moves import Move, Position, Capture, Castling, En_passant, Promotion
 import copy
 import itertools
 
@@ -44,11 +44,17 @@ def is_in_check(pretend_board, color, pos):
             return True
         if pretend_board[i][col].color == color:
             break
+        elif pretend_board[i][col].color != Colors.blank and type(
+                pretend_board[i][col]) not in [Rook, Queen]:
+            break
 
-    for i in range(row - 1, 0, -1):
+    for i in range(row - 1, -1, -1):
         if 0 <= i <= 7 and pretend_board[i][col].color not in [color, Colors.blank] and type(pretend_board[i][col]) in [Rook, Queen]:
             return True
         if 0 <= i <= 7 and pretend_board[i][col].color == color:
+            break
+        elif pretend_board[i][col].color != Colors.blank and type(
+                pretend_board[i][col]) not in [Rook, Queen]:
             break
 
     for i in range(col + 1, len(pretend_board)):
@@ -56,11 +62,17 @@ def is_in_check(pretend_board, color, pos):
             return True
         if 0 <= i <= 7 and pretend_board[row][i].color == color:
             break
+        elif pretend_board[row][i].color != Colors.blank and type(
+                pretend_board[row][i]) not in [Rook, Queen]:
+            break
 
-    for i in range(col - 1, 0, -1):
+    for i in range(col - 1, -1, -1):
         if 0 <= i <= 7 and pretend_board[row][i].color not in [color, Colors.blank] and type(pretend_board[row][i]) in [Rook, Queen]:
             return True
         if 0 <= i <= 7 and pretend_board[row][i].color == color:
+            break
+        elif pretend_board[row][i].color != Colors.blank and type(
+                pretend_board[row][i]) not in [Rook, Queen]:
             break
     i = 1
 
@@ -70,6 +82,9 @@ def is_in_check(pretend_board, color, pos):
             return True
         if pretend_board[row - i][col - i].color == color:
             break
+        elif pretend_board[row - i][col - i].color != Colors.blank and type(
+                pretend_board[row - i][col - i]) not in [Bishop, Queen]:
+            break
         i += 1
     i = 1
     while 0 <= row + i <= 7 and 0 <= col + i <= 7:
@@ -77,6 +92,9 @@ def is_in_check(pretend_board, color, pos):
                 pretend_board[row + i][col + i]) in [Bishop, Queen]:
             return True
         if pretend_board[row + i][col + i].color == color:
+            break
+        elif pretend_board[row + i][col + i].color != Colors.blank and type(
+                pretend_board[row + i][col + i]) not in [Bishop, Queen]:
             break
         i += 1
     i = 1
@@ -87,6 +105,9 @@ def is_in_check(pretend_board, color, pos):
             return True
         if pretend_board[row + i][col - j].color == color:
             break
+        elif pretend_board[row + i][col - j].color != Colors.blank and type(
+                pretend_board[row + i][col - j]) not in [Bishop, Queen]:
+            break
         i += 1
         j += 1
     i = 1
@@ -96,6 +117,9 @@ def is_in_check(pretend_board, color, pos):
                 and type(pretend_board[row - i][col + j]) in [Bishop, Queen]:
             return True
         if pretend_board[row - i][col + j].color == color:
+            break
+        elif pretend_board[row - i][col + j].color != Colors.blank and type(
+                pretend_board[row - i][col + j]) not in [Bishop, Queen]:
             break
         i += 1
         j += 1
@@ -120,6 +144,14 @@ def is_in_check(pretend_board, color, pos):
         if 0 <= row+i <= 7 and 0 <= col+j <= 7 and pretend_board[row + i][col + j].color not in [Colors.blank, color] and type(
                 pretend_board[row + i][col + j]) == Knight:
             return True
+
+    # check by king
+    for i, j in itertools.product([0,1,-1], repeat=2):
+        if i == 0 and j == 0:
+           pass
+        elif 0 <= row+i <= 7 and 0<= col+j <=7:
+            if type(pretend_board[row+i][col+j]) == King:
+                return True
 
     return False
 
@@ -161,7 +193,9 @@ def filter_pawn_captures(board, candidate_moves):
     valid_moves = []
     for move in candidate_moves:
         if type(move) == Capture:
-            if board[move.new_pos.row][move.new_pos.col].color not in [Colors.blank, board[move.prev.row][move.prev.col].color]:
+            if move.new_pos.row in [0, len(board) - 1] and board[move.new_pos.row][move.new_pos.col].color not in [Colors.blank, board[move.prev.row][move.prev.col].color]:
+                valid_moves.extend([Promotion(move, promote_to=piece) for piece in [Queen, Rook, Knight, Bishop]])
+            if move.new_pos.row not in [0, len(board) - 1] and board[move.new_pos.row][move.new_pos.col].color not in [Colors.blank, board[move.prev.row][move.prev.col].color]:
                 valid_moves.append(move)
 
     return valid_moves
@@ -174,12 +208,14 @@ def filter_en_passant(game, candidate_moves):
     # special case of 1st move
     if prev_move is None:
         return []
+    if type(prev_move) is Promotion:
+        return []
 
     for move in candidate_moves:
         prev_row, prev_col = move.prev.row, move.prev.col
         color = board[prev_row][prev_col].color
         if type(move) == En_passant:
-            if prev_move.new_pos.row == move.new_pos.row:
+            if prev_move.new_pos.row == move.prev.row:
                 if color == Colors.black:
                     if move.prev.col == prev_move.new_pos.col + 1 and move.new_pos.col == prev_move.new_pos.col:
                         if prev_move.prev.row == prev_move.new_pos.row - 2 and prev_move.new_pos.col == prev_move.prev.col:
@@ -212,25 +248,25 @@ def filter_en_passant(game, candidate_moves):
 
 def filter_bishop_moves(board, candidate_moves):
     valid_moves = []
-    tmp_row, tmp_col = None, None
     for move in candidate_moves:
-        new_row, new_col = move.new_pos.row, move.new_pos.col
-        old_row, old_col = move.prev.row, move.prev.col
-        # (bad coding) original position cut off from new position - not valid for rook and bishop
-        if tmp_row is not None and tmp_col is not None:
-            if new_row > tmp_row + 1 or new_row < tmp_row - 1 or new_col > tmp_col + 1 or new_col < tmp_col - 1:
-                break
-        else:
-            if new_row > old_row + 1 or new_row < old_row - 1 or new_col > old_col + 1 or new_col < old_col - 1:
-                break
+        if 0 <= move.new_pos.row <= 7 and 0 <= move.new_pos.col <= 7:
+            new_row, new_col = move.new_pos.row, move.new_pos.col
+            old_row, old_col = move.prev.row, move.prev.col
+            # # (bad coding) original position cut off from new position - not valid for rook and bishop
+            # if tmp_row is not None and tmp_col is not None:
+            #     if new_row > tmp_row + 1 or new_row < tmp_row - 1 or new_col > tmp_col + 1 or new_col < tmp_col - 1:
+            #         break
+            # else:
+            #     if new_row > old_row + 1 or new_row < old_row - 1 or new_col > old_col + 1 or new_col < old_col - 1:
+            #         break
 
-        if board[new_row][new_col].color == board[old_row][old_col].color:
-            break
-        if board[new_row][new_col].color not in [Colors.blank, board[old_row][old_col].color]:
-            valid_moves.append(Capture(move.prev, move.new_pos))
-            break
-        valid_moves.append(move)
-        tmp_row, tmp_col = new_row, new_col
+            if board[new_row][new_col].color == board[old_row][old_col].color:
+                break
+            if board[new_row][new_col].color not in [Colors.blank, board[old_row][old_col].color]:
+                valid_moves.append(Capture(move.prev, move.new_pos))
+                break
+            valid_moves.append(move)
+            tmp_row, tmp_col = new_row, new_col
     return valid_moves
 
 
@@ -281,8 +317,13 @@ def filter_castling_moves(board, castling_moves):
 def filter_pawn_moves(board, normal_moves):
     valid_moves = []
     for move in normal_moves:
-        if board[move.new_pos.row][move.new_pos.col].color == Colors.blank:
+
+        if move.new_pos.row in [0, len(board) - 1] and board[move.new_pos.row][move.new_pos.col].color == Colors.blank:
+            valid_moves.extend([Promotion(move, promote_to=piece) for piece in [Queen, Rook, Knight, Bishop]])
+        elif move.new_pos.row not in [0, len(board) - 1] and board[move.new_pos.row][move.new_pos.col].color == Colors.blank:
             valid_moves.append(move)
+        else:
+            break
     return valid_moves
 
 
@@ -331,15 +372,15 @@ class Rook(Piece):
         row = position.row
         col = position.col
 
-        right_up_moves = filter_valid_moves(game.board, [Move(position, Position((row+i, col))) for i in range(1, len(game.board))])
-        right_down_moves = filter_valid_moves(game.board, [Move(position, Position((row - i, col))) for i in range(1, len(game.board))])
-        left_up_moves = filter_valid_moves(game.board, [Move(position, Position((row, col-i))) for i in range(1, len(game.board))])
-        left_down_moves = filter_valid_moves(game.board, [Move(position, Position((row, col+i))) for i in range(1, len(game.board))])
+        right_up_moves = filter_bishop_moves(game.board, [Move(position, Position((row+i, col))) for i in range(1, len(game.board))])
+        right_down_moves = filter_bishop_moves(game.board, [Move(position, Position((row - i, col))) for i in range(1, len(game.board))])
+        left_up_moves = filter_bishop_moves(game.board, [Move(position, Position((row, col-i))) for i in range(1, len(game.board))])
+        left_down_moves = filter_bishop_moves(game.board, [Move(position, Position((row, col+i))) for i in range(1, len(game.board))])
 
-        right_up_moves = filter_bishop_moves(game.board, right_up_moves)
-        right_down_moves = filter_bishop_moves(game.board, right_down_moves)
-        left_up_moves = filter_bishop_moves(game.board, left_up_moves)
-        left_down_moves = filter_bishop_moves(game.board, left_down_moves)
+        right_up_moves = filter_valid_moves(game.board, right_up_moves)
+        right_down_moves = filter_valid_moves(game.board, right_down_moves)
+        left_up_moves = filter_valid_moves(game.board, left_up_moves)
+        left_down_moves = filter_valid_moves(game.board, left_down_moves)
 
         return right_up_moves+right_down_moves+left_up_moves+left_down_moves
 
@@ -376,15 +417,15 @@ class Bishop(Piece):
         row = position.row
         col = position.col
 
-        right_up_moves = filter_valid_moves(game.board, [Move(position, Position((row+i, col+i))) for i in range(1, len(game.board) - 1)])
-        right_down_moves = filter_valid_moves(game.board, [Move(position, Position((row - i, col + i))) for i in range(1, len(game.board) - 1)])
-        left_up_moves = filter_valid_moves(game.board, [Move(position, Position((row+i, col-i))) for i in range(1, len(game.board) - 1)])
-        left_down_moves = filter_valid_moves(game.board, [Move(position, Position((row-i, col-i))) for i in range(1, len(game.board) - 1)])
+        right_up_moves = filter_bishop_moves(game.board, [Move(position, Position((row+i, col+i))) for i in range(1, len(game.board) - 1)])
+        right_down_moves = filter_bishop_moves(game.board, [Move(position, Position((row - i, col + i))) for i in range(1, len(game.board) - 1)])
+        left_up_moves = filter_bishop_moves(game.board, [Move(position, Position((row+i, col-i))) for i in range(1, len(game.board) - 1)])
+        left_down_moves = filter_bishop_moves(game.board, [Move(position, Position((row-i, col-i))) for i in range(1, len(game.board) - 1)])
 
-        right_up_moves = filter_bishop_moves(game.board, right_up_moves)
-        right_down_moves = filter_bishop_moves(game.board, right_down_moves)
-        left_up_moves = filter_bishop_moves(game.board, left_up_moves)
-        left_down_moves = filter_bishop_moves(game.board, left_down_moves)
+        right_up_moves = filter_valid_moves(game.board, right_up_moves)
+        right_down_moves = filter_valid_moves(game.board, right_down_moves)
+        left_up_moves = filter_valid_moves(game.board, left_up_moves)
+        left_down_moves = filter_valid_moves(game.board, left_down_moves)
 
         return right_up_moves+right_down_moves+left_up_moves+left_down_moves
 

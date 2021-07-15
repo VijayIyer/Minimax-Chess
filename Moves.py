@@ -22,7 +22,7 @@ class Move:
         row = str(self.new_pos.row + 1)
         if prev_col == col:
             prev_col = ''
-        return prev_col+col + row
+        return col + row
 
 
 class En_passant(Move):
@@ -35,7 +35,7 @@ class En_passant(Move):
         row = str(self.new_pos.row + 1)
         if prev_col == col:
             prev_col = ''
-        return prev_col+ 'x' + col + row
+        return 'x' + col + row
 
 
 class Castling(Move):
@@ -59,4 +59,19 @@ class Capture(Move):
         row = str(self.new_pos.row + 1)
         if prev_col == col:
             prev_col = ''
-        return prev_col+'x' + col + row
+        return 'x' + col + row
+
+class Promotion:
+    def __init__(self, move:Move, promote_to):
+        self.promote_to = promote_to
+        self.move = move
+
+    def __str__(self):
+        capture = 'x' if type(Move) == Capture else ''
+        prev_col = chr(96 + (8 - self.move.prev.col))
+        col = chr(96 + (8 - self.move.new_pos.col))
+        row = str(self.move.new_pos.row + 1)
+        if prev_col == col:
+            prev_col = ''
+
+        return capture + col + row + '='
