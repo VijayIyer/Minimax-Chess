@@ -42,8 +42,11 @@ def print_dots(number_of_dots):
 
 class Game:
     def __init__(self, starting_pos):
-
         self.starting_pos = starting_pos
+        self.white_positions = set()
+        self.black_positions = set()
+        self.white_king_pos = (0, 3)
+        self.black_king_pos = (7, 3)
         self.board = self.initalize_board_and_pieces()
         self.moves = []
         self.move_names = []
@@ -51,21 +54,12 @@ class Game:
         self.move_count = 1
         self.game_moves_total = ''
         self.is_in_check = ''
+
         self.same_move = defaultdict(list)
         if len(starting_pos) > 0:
             for move_name in starting_pos:
-
                 move = self.infer_move(move_name, self.turn)
                 self.update_board(move)
-                # if self.turn == Colors.white:
-                #     self.turn = Colors.black
-                #     self.game_moves_total += ' ' + str(self.move_count) + '.'
-                #     self.game_moves_total += self.move_names[-1]
-                # elif self.turn == Colors.black:
-                #     self.turn = Colors.white
-                #
-                #     self.game_moves_total += ' ' + self.move_names[-1]
-                #     self.move_count += 1
 
     def get_move_name(self, chosen_move):
         promoted_piece = ''
@@ -163,16 +157,50 @@ class Game:
         board[7][2] = Bishop(color=Colors.black)
         board[7][3] = King(color=Colors.black)
         board[7][4] = Queen(color=Colors.black)
+        self.white_positions.add((0, 0))
+        self.white_positions.add((0, 1))
+        self.white_positions.add((0, 2))
+        self.white_positions.add((0, 3))
+        self.white_positions.add((0, 4))
+        self.white_positions.add((0, 5))
+        self.white_positions.add((0, 6))
+        self.white_positions.add((0, 7))
+        self.white_positions.add((1, 0))
+        self.white_positions.add((1, 1))
+        self.white_positions.add((1, 2))
+        self.white_positions.add((1, 3))
+        self.white_positions.add((1, 4))
+        self.white_positions.add((1, 5))
+        self.white_positions.add((1, 6))
+        self.white_positions.add((1, 7))
+
+        self.black_positions.add((6, 0))
+        self.black_positions.add((6, 1))
+        self.black_positions.add((6, 2))
+        self.black_positions.add((6, 3))
+        self.black_positions.add((6, 4))
+        self.black_positions.add((6, 5))
+        self.black_positions.add((6, 6))
+        self.black_positions.add((6, 7))
+        self.black_positions.add((7, 0))
+        self.black_positions.add((7, 1))
+        self.black_positions.add((7, 2))
+        self.black_positions.add((7, 3))
+        self.black_positions.add((7, 4))
+        self.black_positions.add((7, 5))
+        self.black_positions.add((7, 6))
+        self.black_positions.add((7, 7))
         return board
 
     def generate_moves(self):
         valid_moves = []
         self.same_move = defaultdict(list)
-        for row in range(len(self.board)):
-            for col in range(len(self.board[0])):
-                if self.board[row][col].color == self.turn:
-                    piece = self.board[row][col]
-                    valid_moves.extend(piece.get_moves(Position((row, col)), self))
+
+        piece_set = self.white_positions if self.turn == Colors.white else self.black_positions
+
+        for row, col in piece_set:
+            piece = self.board[row][col]
+            valid_moves.extend(piece.get_moves(Position((row, col)), self))
         for move in valid_moves:
             if type(move) == Promotion:
                 self.same_move[(move.move.new_pos.row, move.move.new_pos.col)].append(move)
@@ -203,7 +231,10 @@ class Game:
 
 
     def act_on_move(self, move: Move):
+        if type(self.board[move.prev.row][move.prev.col]) == King:
+            self.update_king_pos(move)
         if type(move) == Castling:
+
 
             # updating king position
             new_board = copy.deepcopy(self.board)
@@ -212,19 +243,35 @@ class Game:
             new_board[new_row][new_col] = copy.deepcopy(self.board[old_row][old_col])
             new_board[old_row][old_col] = Piece(color=Colors.blank)
             new_board[new_row][new_col].has_moved = True
+            if self.turn == Colors.white:
+                self.white_positions.remove((old_row, old_col))
+                self.white_positions.add((new_row, new_col))
+            else:
+                self.black_positions.remove((old_row, old_col))
+                self.black_positions.add((new_row, new_col))
 
             # updating rook position
             if new_col == old_col - 2:
                 new_board[new_row][new_col + 1] = copy.deepcopy(new_board[new_row][0])
                 new_board[new_row][new_col + 1].has_moved = True
                 new_board[new_row][0] = Piece(color=Colors.blank)
+                if self.turn == Colors.white:
+                    self.white_positions.remove((old_row, old_col - 2))
+                    self.white_positions.add((new_row, new_col + 1))
+                else:
+                    self.black_positions.remove((old_row, old_col - 2))
+                    self.black_positions.add((new_row, new_col + 1))
             else:
                 new_board[new_row][new_col - 1] = copy.deepcopy(new_board[new_row][7])
                 new_board[new_row][new_col - 1].has_moved = True
                 new_board[new_row][7] = Piece(color=Colors.blank)
-
+                if self.turn == Colors.white:
+                    self.white_positions.remove((old_row, 7))
+                    self.white_positions.add((new_row, new_col - 1))
+                else:
+                    self.black_positions.remove((old_row, 7))
+                    self.black_positions.add((new_row, new_col - 1))
             return new_board
-
         elif type(move) == En_passant:
             op = operator.sub if self.board[move.prev.row][move.prev.col].color == Colors.white else operator.add
             new_board = copy.deepcopy(self.board)
@@ -235,6 +282,15 @@ class Game:
             new_board[new_row][new_col].has_moved = True
             # updating captured piece
             new_board[op(new_row, 1)][new_col] = Piece(color=Colors.blank)
+            if self.turn == Colors.white:
+                self.white_positions.add((new_row, new_col))
+                self.white_positions.remove((old_row, old_col))
+                self.black_positions.remove((new_row - 1, new_col))
+            else:
+                self.black_positions.add((new_row, new_col))
+                self.black_positions.remove((old_row, old_col))
+                self.white_positions.remove((new_row + 1, new_col))
+
             return new_board
         elif type(move) == Promotion:
             promoted_type = move.promote_to
@@ -245,6 +301,12 @@ class Game:
             new_board[new_row][new_col] = promoted_type(color=new_board[old_row][old_col].color)
             new_board[old_row][old_col] = Piece(color=Colors.blank)
             new_board[new_row][new_col].has_moved = True
+            if self.turn == Colors.white:
+                self.white_positions.add((new_row, new_col))
+                self.white_positions.remove((old_row, old_col))
+            else:
+                self.black_positions.add((new_row, new_col))
+                self.black_positions.remove((old_row, old_col))
             return new_board
         else:
             new_board = copy.deepcopy(self.board)
@@ -253,6 +315,16 @@ class Game:
             new_board[new_row][new_col] = copy.deepcopy(self.board[old_row][old_col])
             new_board[old_row][old_col] = Piece(color=Colors.blank)
             new_board[new_row][new_col].has_moved = True
+            if self.turn == Colors.white:
+                self.white_positions.add((new_row, new_col))
+                self.white_positions.remove((old_row, old_col))
+                if type(move) == Capture:
+                    self.black_positions.remove((new_row, new_col))
+            else:
+                self.black_positions.add((new_row, new_col))
+                self.black_positions.remove((old_row, old_col))
+                if type(move) == Capture:
+                    self.white_positions.remove((new_row, new_col))
             return new_board
 
     def infer_move(self, move, color):
@@ -417,3 +489,9 @@ class Game:
             # print(game.game_moves_total)
 
             self.move_count += 1 # increase move count only when both black and white have completed turns
+
+    def update_king_pos(self, move):
+        if self.turn == Colors.white:
+            self.white_king_pos = move.new_pos.row, move.new_pos.col
+        else:
+            self.black_king_pos = move.new_pos.row, move.new_pos.col
