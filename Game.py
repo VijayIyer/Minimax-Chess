@@ -199,7 +199,8 @@ class Game:
         else:
             self.turn = Colors.white
             self.game_moves_total += ' ' + self.move_names[-1] + self.is_in_check
-        self.move_count += 1
+            self.move_count += 1
+
 
     def act_on_move(self, move: Move):
         if type(move) == Castling:
