@@ -75,25 +75,34 @@ def max_value(new_game, depth):
 
 
 if __name__ == '__main__':
-    starting_pos = ['e4', 'e5', 'Qh5', 'Nf6']
+    starting_pos = ['e4', 'e5', 'f4']
 
     game = Game(starting_pos)
-
-    game.max_moves = 5
+    game_count = 0
+    game.max_moves = 8
     print(game.game_moves_total)
-    while game.move_count <= game.max_moves:
-        scores = []
-        depth = 0
-        for move in game.generate_moves():
-            new_game = copy.deepcopy(game)
-            new_game.update_board(move)
-            scores.append((move, min_value(new_game, depth + 1)))
-        best_move = max(scores, key=lambda t: t[1])
+    while(1):
+        game_count += 1
+        while game.move_count <= game.max_moves:
+            scores = []
+            depth = 0
+            moves = game.generate_moves()
+            if len(moves) == 0:
+                with open('chess-game-sample.txt', 'a') as f:
+                    f.write('\n'+ game.game_moves_total)
+                break
+            # new_game = copy.deepcopy(game)
 
-        # best_move = Minimax(game)
-        game.update_board(best_move[0])
+            game.update_board(rnd.choice(moves))
+
+        print('\n' + str(game_count) +': ' + game.game_moves_total)
+        game = Game(starting_pos)
+        game.max_moves = 8
+
+    # with open('chess-game-sample.txt', 'a') as f:
+    #     f.write('\n' + game.game_moves_total)
 
     # print(game.game_moves_total)
     # print_chess_board(game.board)
-    save_game(game)
+    # save_game(game)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
