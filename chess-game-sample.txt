@@ -1,2 +1,7 @@
 
  1.e4 e5 2.f4 Ke7 3.Qh5 a5 4.c4 c5 5.Qxe5+
+ 1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6 4.Qxf7+
+ 1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6 4.Qxf7+
+ 1.e4 e5 2.Nf3 d6 3.b4 Na6 4.a4 Nf6 5.c3 Kd7 6.b5 b6 7.Nxe5+ Ke6 8.Rg1 Ng4 9.Qxg4+ f5 10.a5 c5 11.Bd3 Qe7 12.Qxf5+
+ 1.e4 e5 2.Nf3 d6 3.Bb5+
+ 1.e4 e5 2.Nf3 d6 3.d4 Qe7 4.c3 f6 5.g3 Bh3 6.Be3 Nh6 7.c4 Kd7 8.a4 a6 9.Bxh3+ Bxd7 10.Qe2+ Bh3 11.Bd7+
