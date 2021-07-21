@@ -75,11 +75,11 @@ def max_value(new_game, depth):
 
 
 if __name__ == '__main__':
-    starting_pos = ['e4', 'e5', 'f4']
+    starting_pos = ['e4' ,'e5' ,'Nf3', 'd6','d4']
 
     game = Game(starting_pos)
     game_count = 0
-    game.max_moves = 8
+    game.max_moves = 12
     print(game.game_moves_total)
     while(1):
         game_count += 1
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
         print('\n' + str(game_count) +': ' + game.game_moves_total)
         game = Game(starting_pos)
-        game.max_moves = 8
+        game.max_moves = 12
 
     # with open('chess-game-sample.txt', 'a') as f:
     #     f.write('\n' + game.game_moves_total)
