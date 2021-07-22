@@ -46,36 +46,40 @@ def Minimax(game, depth=0):
         return [(None, -math.inf)]
 
 
-def min_value(new_game, depth):
+def min_value(new_game, depth, alpha, beta):
     moves = new_game.generate_moves()
     if len(new_game.generate_moves()) == 0:
         return math.inf
-    if depth >= 3:
+    if depth >= 4:
         return ChessEvaluator(new_game).evaluate()
     v = math.inf
     for move in moves:
         game = copy.deepcopy(new_game)
         game.update_board(move)
-        v = min(v, max_value(game, depth+1))
+        v = min(v, max_value(game, depth+1, alpha, beta))
+        if v <= alpha: return v
+        beta = min([beta, v])
     return v
 
 
-def max_value(new_game, depth):
+def max_value(new_game, depth, alpha, beta):
     moves = new_game.generate_moves()
     if len(new_game.generate_moves()) == 0:
         return -math.inf
-    if depth >= 3:
+    if depth >= 4:
         return ChessEvaluator(new_game).evaluate()
     v = -math.inf
     for move in moves:
         game = copy.deepcopy(new_game)
         game.update_board(move)
-        v = max(v, min_value(game, depth+1))
+        v = max(v, min_value(game, depth+1, alpha, beta))
+        if v >= beta: return v
+        alpha = max([alpha, v])
     return v
 
 
 if __name__ == '__main__':
-    starting_pos = ['e4', 'e5', 'Qh5', 'Nf6']
+    starting_pos = ['e4', 'e5', 'Bc4','Nc6','Qf3','h6']
 
     game = Game(starting_pos)
 
@@ -84,10 +88,13 @@ if __name__ == '__main__':
     while game.move_count <= game.max_moves:
         scores = []
         depth = 0
+
         for move in game.generate_moves():
+            alpha = -math.inf
+            beta = math.inf
             new_game = copy.deepcopy(game)
             new_game.update_board(move)
-            scores.append((move, min_value(new_game, depth + 1)))
+            scores.append((move, min_value(new_game, depth + 1, alpha, beta)))
         best_move = max(scores, key=lambda t: t[1])
 
         # best_move = Minimax(game)
