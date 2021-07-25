@@ -5,10 +5,9 @@ import copy
 import itertools
 
 class Piece:
-    def __init__(self, color, is_pinned=False):
-        self.is_pinned = is_pinned
+    def __init__(self, color, has_moved = False):
         self.color = color
-        self.has_moved = False
+        self.has_moved = has_moved
 
     def get_moves(self, position, board):
         return []
@@ -168,6 +167,7 @@ def filter_valid_moves(game, candidate_moves):
         if 0 <= move.new_pos.row <= len(board)-1 and 0 <= move.new_pos.col <= len(board[0])-1:
             color = board[move.prev.row][move.prev.col].color
 
+            # pretend_board = copy.deepcopy(board)
             pretend_board = copy.deepcopy(board)
             old_piece = pretend_board[move.prev.row][move.prev.col]
             pretend_board[move.prev.row][move.prev.col] = Piece(color=Colors.blank)
@@ -181,13 +181,9 @@ def filter_valid_moves(game, candidate_moves):
                     pos = game.black_king_pos
 
             if pos is not None:
-
-                # if move.prev.row+move.prev.col != pos[0]+pos[1] and \
-                #         move.prev.row - move.prev.col != pos[0] - pos[1]\
-                #         and move.prev.row != pos[0] and move.prev.col != pos[1]:
-                #     valid_moves.append(move)
-                if not is_in_check(pretend_board, color, pos):
+                if not is_in_check(board, color, pos):
                     valid_moves.append(move)
+
     return valid_moves
 
 
@@ -212,10 +208,15 @@ def filter_en_passant(game, candidate_moves):
     board = game.board
     prev_move = game.moves[-1] if len(game.moves) > 0 else None
     valid_moves = []
+
     # special case of 1st move
     if prev_move is None:
         return []
+    prev_move_piece = board[prev_move.new_pos.row][prev_move.new_pos.col]
     if type(prev_move) is Promotion:
+        return []
+
+    if type(prev_move_piece) != Pawn:
         return []
 
     for move in candidate_moves:
@@ -327,8 +328,8 @@ def filter_pawn_moves(board, normal_moves):
 
 
 class Pawn(Piece):
-    def __init__(self, color, is_pinned=False):
-        super(Pawn, self).__init__(color, is_pinned)
+    def __init__(self, color, has_moved=False):
+        super(Pawn, self).__init__(color, has_moved)
 
     def get_moves(self, position, game):
         row = position.row
@@ -364,8 +365,8 @@ class Pawn(Piece):
 
 
 class Rook(Piece):
-    def __init__(self, color, is_pinned=False):
-        super(Rook, self).__init__(color, is_pinned)
+    def __init__(self, color, has_moved = False):
+        super(Rook, self).__init__(color, has_moved)
 
     def get_moves(self, position, game):
         row = position.row
@@ -388,8 +389,8 @@ class Rook(Piece):
 
 
 class King(Piece):
-    def __init__(self, color, is_pinned=False):
-        super(King, self).__init__(color, is_pinned)
+    def __init__(self, color, has_moved=False):
+        super(King, self).__init__(color, has_moved)
 
     def get_moves(self, position, game):
         row = position.row
@@ -409,8 +410,8 @@ class King(Piece):
 
 
 class Bishop(Piece):
-    def __init__(self, color, is_pinned=False):
-        super(Bishop, self).__init__(color, is_pinned)
+    def __init__(self, color, has_moved=False):
+        super(Bishop, self).__init__(color, has_moved)
 
     def get_moves(self, position, game):
         row = position.row
@@ -433,8 +434,8 @@ class Bishop(Piece):
 
 
 class Queen(Piece):
-    def __init__(self, color, is_pinned=False):
-        super(Queen, self).__init__(color, is_pinned)
+    def __init__(self, color, has_moved=False):
+        super(Queen, self).__init__(color, has_moved)
 
     def get_moves(self, position, game):
         color = game.board[position.row][position.col].color
@@ -447,8 +448,8 @@ class Queen(Piece):
 
 
 class Knight(Piece):
-    def __init__(self, color, is_pinned=False):
-        super(Knight, self).__init__(color, is_pinned)
+    def __init__(self, color, has_moved=False):
+        super(Knight, self).__init__(color, has_moved)
 
     def get_moves(self, position, game):
         row = position.row
