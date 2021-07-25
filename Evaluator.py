@@ -21,4 +21,4 @@ class ChessEvaluator:
                     if type(piece) == Queen:
                         self.material_value[piece.color] += 9
 
-        return self.material_value[Colors.white] - self.material_value[Colors.black]
+        return self.material_value[Colors.white] - self.material_value[Colors.black] if self.game.turn == Colors.white else self.material_value[Colors.black] - self.material_value[Colors.black]
