@@ -11,6 +11,7 @@ import math
 import random as rnd
 import time
 from Board import Board
+import sys
 
 
 def save_game(game):
@@ -83,46 +84,32 @@ def max_value(game, depth, alpha, beta):
 
 
 if __name__ == '__main__':
-    # board = Board((8, 8))
-    #
-    # while(1):
-    #     board.update_turn()
-    #
-    #     # move choosing logic, to be replaced by Minimax
-    #     if board.turn == 'white':
-    #         pieces = board.white_moves
-    #     else:
-    #         pieces = board.black_moves
-    #     piece = rnd.choice(pieces.keys())
-    #     move = rnd.choice(pieces[piece])
-    #     board.add_move(piece, move)
+    num_moves = int(sys.argv[1])
+    move_logic = sys.argv[2]
 
-    # diagonals = Board.generate_diagonals((8, 8))
-    # straights = Board.get_rows_columns((8,8))
-    # white_pos = Board.initialize_white_pos()
-    # black_pos = Board.initalize_black_pos()
-    # white_move_set = Board.generate_moves(white_pos)
-
-    starting_pos = ['e4', 'e5']
+    starting_pos = []
     start = time.time()
     game = Game(starting_pos)
 
-    game.max_moves = 10
+    game.max_moves = num_moves
     print(game.game_moves_total)
     while game.move_count <= game.max_moves:
         scores = []
         depth = 1
         valid_moves = game.generate_moves()
-        for move in valid_moves:
-            alpha = -math.inf
-            beta = math.inf
-            game.update_board(move)
-            scores.append((move, min_value(game, depth + 1, alpha, beta)))
-            game.revert_board(valid_moves, move)
-        best_move = max(scores, key=lambda t: t[1])
+        if len(valid_moves) == 0 : break
+        if move_logic == 'minimax':
+            for move in valid_moves:
+                alpha = -math.inf
+                beta = math.inf
+                game.update_board(move)
+                scores.append((move, min_value(game, depth + 1, alpha, beta)))
+                game.revert_board(valid_moves, move)
+            best_move = max(scores, key=lambda t: t[1])
 
-        # best_move = Minimax(game)
-        game.update_board(best_move[0])
+            best_move = Minimax(game)
+        else:
+            game.update_board(rnd.choice(valid_moves))
 
 
     end = time.time() - start
@@ -130,5 +117,5 @@ if __name__ == '__main__':
     print(end)
     # print(game.game_moves_total)
     # print_chess_board(game.board)
-    # save_game(game)
+    save_game(game)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

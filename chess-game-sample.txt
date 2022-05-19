@@ -1,7 +1,1 @@
-
- 1.e4 e5 2.f4 Ke7 3.Qh5 a5 4.c4 c5 5.Qxe5+
- 1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6 4.Qxf7+
- 1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6 4.Qxf7+
- 1.e4 e5 2.Nf3 d6 3.b4 Na6 4.a4 Nf6 5.c3 Kd7 6.b5 b6 7.Nxe5+ Ke6 8.Rg1 Ng4 9.Qxg4+ f5 10.a5 c5 11.Bd3 Qe7 12.Qxf5+
- 1.e4 e5 2.Nf3 d6 3.Bb5+
- 1.e4 e5 2.Nf3 d6 3.d4 Qe7 4.c3 f6 5.g3 Bh3 6.Be3 Nh6 7.c4 Kd7 8.a4 a6 9.Bxh3+ Bxd7 10.Qe2+ Bh3 11.Bd7+
+ 1.Nc3 b6 2.f3 c6 3.Rb1 b5 4.a4 a5 5.d3 d5 6.Na2 Ra6 7.c3 g6 8.Ra1 Qb6 9.e3 b4 10.Nxb4 Qb5 11.Ne2 Bb7 12.Qd2 Nh6 13.Ng1 Ba8 14.e4 Nf5 15.Qg5 h6 16.Bf4 Rh7 17.Nxd5 Nd7 18.Qh4 Ra7 19.Nxe7 Qb8 20.Nd5 Qb5 21.axb5 cxb5 22.Rd1 Rb7 23.Qg5 Nd6 24.Bg3 Nb6 25.Ra1 Rh8 26.Nc7+

@@ -64,7 +64,7 @@ class Game:
 
     def get_move_name(self, chosen_move):
         '''
-
+        move names are the notations used to denote a move in chess (e.g. e4, Nf3, etc)
         :param chosen_move: the move whose name needs to be inferred
         :return: a string which represents the move correctly, removing all ambiguities
         '''

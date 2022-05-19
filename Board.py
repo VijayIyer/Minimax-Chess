@@ -277,6 +277,9 @@ def generate_diagonals(board_dim):
 
 
 def get_rows(param):
+    '''
+    The squares on the board for each row
+    '''
     rows = param[0]
     cols = param[1]
     straights = []
@@ -292,6 +295,9 @@ def get_rows(param):
 
 
 def get_columns(param):
+    '''
+    the squares on the board for each column
+    '''
     rows = param[0]
     cols = param[1]
     straights = []
@@ -308,6 +314,9 @@ def get_columns(param):
 
 
 def initialize_white_pos():
+    '''
+    The white pieces, placed at correct locations as per typical configuration in normal chess
+    '''
     white_pos = {}
     white_pos[(0, 0)] = 'Rook'
     white_pos[(0, 1)] = 'Knight'
@@ -329,6 +338,9 @@ def initialize_white_pos():
 
 
 def initalize_black_pos():
+    '''
+    The black pieces, placed at correct locations 
+    '''
     black_pos = {}
     black_pos[(7, 0)] = 'Rook'
     black_pos[(7, 1)] = 'Knight'
